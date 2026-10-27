@@ -1,4 +1,5 @@
 import functools
+import time
 
 
 def memoize(func):
@@ -29,3 +30,24 @@ def retry(times: int, exceptions: tuple) :
             return func(*args, **kwargs)
         return wrapper
     return decorator
+
+
+
+def timed_cache(ttl:int=60, clock=time.monotonic):
+    def decorator(func):
+        cache = {}
+        @functools.wraps(func)
+        def wrapper(*args):
+            now = clock()
+            if args in cache:
+                if cache[args]['del_timig'] <= now:
+                    del cache[args]
+                else:
+                    return cache[args]['result']
+            result = func(*args)
+            cache[args] = {'result': result, 'del_timig': now + ttl}
+            return result
+        return wrapper
+    return decorator
+
+
