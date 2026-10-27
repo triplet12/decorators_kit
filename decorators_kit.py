@@ -40,12 +40,13 @@ def timed_cache(ttl:int=60, clock=time.monotonic):
         def wrapper(*args):
             now = clock()
             if args in cache:
-                if cache[args]['del_timig'] <= now:
+                result, expires_at = cache[args]
+                if expires_at <= now:
                     del cache[args]
                 else:
-                    return cache[args]['result']
+                    return result
             result = func(*args)
-            cache[args] = {'result': result, 'del_timig': now + ttl}
+            cache[args] = result, now + ttl
             return result
         return wrapper
     return decorator
