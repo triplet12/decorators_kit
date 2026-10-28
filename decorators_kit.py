@@ -59,9 +59,7 @@ def rate_limit(calls=5, period=1, clock=time.monotonic):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             now = clock()
-            if not calls_history:
-                calls_history.append(now)
-                return func(*args, **kwargs)
+            
             while calls_history and calls_history[0] <= now - period:
                 del calls_history[0]
             if len(calls_history) >= calls:
