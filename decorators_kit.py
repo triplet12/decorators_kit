@@ -17,17 +17,17 @@ def memoize(func):
     return wrapper
 
 
-def retry(times: int, exceptions: tuple) :
+def retry(times: int, exceptions: tuple, delay: int=1, backoff:int=2, sleep=time.sleep) :
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            for attempt in range(times - 1):
-
+            current_delay = delay
+            for _ in range(times - 1):
                 try:
                     return func(*args, **kwargs)
                 except exceptions:
-                    pass
-
+                    sleep(current_delay)
+                    current_delay *= backoff
             return func(*args, **kwargs)
         return wrapper
     return decorator
@@ -59,7 +59,7 @@ def rate_limit(calls=5, period=1, clock=time.monotonic):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             now = clock()
-            
+
             while calls_history and calls_history[0] <= now - period:
                 del calls_history[0]
             if len(calls_history) >= calls:
