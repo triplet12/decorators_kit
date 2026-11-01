@@ -2,21 +2,18 @@ import functools
 import time
 
 
-def timed_cache(ttl:int=60, clock=time.monotonic):
-    '''Кеширование результатов функции на ttl секунд'''
+def retry(times: int, exceptions: tuple, delay: int=1, backoff:int=2, sleep=time.sleep):
+    '''Выполнение функции times раз если падает exceptions'''
     def decorator(func):
-        cache = {}
         @functools.wraps(func)
-        def wrapper(*args):
-            now = clock()
-            if args in cache:
-                result, expires_at = cache[args]
-                if expires_at <= now:
-                    del cache[args]
-                else:
-                    return result
-            result = func(*args)
-            cache[args] = result, now + ttl
-            return result
+        def wrapper(*args, **kwargs):
+            current_delay = delay
+            for _ in range(times - 1):
+                try:
+                    return func(*args, **kwargs)
+                except exceptions:
+                    sleep(current_delay)
+                    current_delay *= backoff
+            return func(*args, **kwargs)
         return wrapper
     return decorator
